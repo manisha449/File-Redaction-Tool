@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>File Redaction Tool</title><script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-r from-purple-600 to-indigo-600 min-h-screen flex items-center justify-center text-white">
+<div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md text-black">
+<h1 class="text-2xl font-bold mb-4">🔏 File Redaction Tool</h1>
+<form id="redactForm">
+<input type="file" name="file" accept=".pdf,.docx" required class="border p-2 w-full mb-3 rounded" />
+<textarea name="redact_words" id="redactWords" placeholder="Additional words to redact (comma separated, optional)" class="border p-2 w-full mb-3 rounded"></textarea>
+<button type="button" onclick="startListening()" class="bg-purple-600 text-white px-4 py-2 rounded w-full mb-2">🎤 Speak Words</button>
+<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded w-full">📝 Upload & Redact</button>
+</form></div>
+<script>
+document.getElementById("redactForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+    let formData = new FormData(this);
+    const response = await fetch("http://127.0.0.1:5000/redact", {
+        method: "POST",
+        body: formData
+    });
+    if(response.ok){
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "redacted_" + (formData.get("file").name || "file");
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    } else {
+        alert("Redaction failed.");
+    }
+});
+function startListening() {
+let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+recognition.lang = 'en-US';
+recognition.start();
+recognition.onresult = function(event) {
+let transcript = event.results[0][0].transcript;
+document.getElementById("redactWords").value += (document.getElementById("redactWords").value ? ", " : "") + transcript;
+};}
+</script></body></html>
